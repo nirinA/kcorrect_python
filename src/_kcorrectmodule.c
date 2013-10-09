@@ -69,38 +69,13 @@ PyDoc_STRVAR(kcorrect_load_templates_doc,
 "loads the templates"
 );
 
-/*
 static PyObject *
 kcorrect_load_filters(PyObject *self, PyObject *args)
 {
-    
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-PyDoc_STRVAR(kcorrect_load_filters_doc,
-"loads the filters"
-);
-*/
-
-static PyObject *
-kcorrect_fit_coeffs(PyObject *self, PyObject *args)
-{
-    IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
     char * ffile;
-    char * cfile;
-    PyArrayObject *cin, *cout;
-    PyArray_Descr * dsc;
-    FILE *fp;
-    int nd;
-
-    if (!PyArg_ParseTuple(args, "ss", &cfile, &ffile))
+    int i;
+    if (!PyArg_ParseTuple(args, "s", &ffile))
         return NULL;
-    fp=fopen(cfile,"r");
-    dsc = PyArray_DescrFromType(NPY_FLOAT32);
-    cin = (PyArrayObject *)PyArray_FromFile(fp, dsc, -1, " ");
-    nd=cin->dimensions[0]/11;
-//    printf("dim: %i \n %i %i ...\n", cin->nd, cin->dimensions[0], nd);
 
 	/* load in the filters */
 	k_load_filters(&filter_n,&filter_lambda,&filter_pass,&maxn,&nk,ffile);
@@ -117,6 +92,32 @@ kcorrect_fit_coeffs(PyObject *self, PyObject *args)
 		zvals[i]=zmin+(zmax-zmin)*((float)i+0.5)/(float)nz;
 	k_projection_table(rmatrix,nk,nv,vmatrix,lambda,nl,zvals,nz,filter_n,
                            filter_lambda,filter_pass,band_shift,maxn);
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+PyDoc_STRVAR(kcorrect_load_filters_doc,
+"loads the filters"
+);
+
+static PyObject *
+kcorrect_fit_coeffs(PyObject *self, PyObject *args)
+{
+    IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
+    char * cfile;
+    PyArrayObject *cin, *cout;
+    PyArray_Descr * dsc;
+    FILE *fp;
+    int nd;
+
+    if (!PyArg_ParseTuple(args, "s", &cfile))
+        return NULL;
+    fp=fopen(cfile,"r");
+    dsc = PyArray_DescrFromType(NPY_FLOAT32);
+    cin = (PyArrayObject *)PyArray_FromFile(fp, dsc, -1, " ");
+    nd=cin->dimensions[0]/11;
+//    printf("dim: %i \n %i %i ...\n", cin->nd, cin->dimensions[0], nd);
 
     nchunk=20;
     float *mag;
@@ -158,6 +159,7 @@ PyDoc_STRVAR(kcorrect_fit_coeffs_doc,
 static PyMethodDef kcorrect_methods[] = {
     {"fit_coeffs", kcorrect_fit_coeffs, METH_VARARGS, kcorrect_fit_coeffs_doc},
     {"load_templates", kcorrect_load_templates, METH_VARARGS, kcorrect_load_templates_doc},
+    {"load_filters", kcorrect_load_filters, METH_VARARGS, kcorrect_load_filters_doc},
     {NULL,		NULL}		/* sentinel */
 };
 

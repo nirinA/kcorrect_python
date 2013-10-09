@@ -2,7 +2,6 @@ build/
 *.so
 C_*
 *.dat
-_*.c
 *.pdf
 *.ps
 __pycache__/

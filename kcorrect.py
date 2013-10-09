@@ -28,12 +28,18 @@ def read_maggies(mag):
             'maggies':maggies,
             'maggies_ivar':maggies_ivar}
 
-def fit_coeffs(c, *args):
+def load_templates(*args):
     vfile = "/mnt/big/store/kcorrect/data/templates/vmatrix.default.dat"
     lfile = "/mnt/big/store/kcorrect/data/templates/lambda.default.dat"
+    _kcorrect.load_templates(vfile, lfile)
+
+def load_filters(*args):
     ffile = "/mnt/big/store/kcorrect/data/templates/sdss_filters.dat"
+    _kcorrect.load_filters(ffile)
+   
+def fit_coeffs(c, *args):
 ##    rmm = read_maffies(cfile)
 ##    redshifts = rmm['redshifts']
 ##    maggies = rmm['maggies']
 ##    maggies_ivar = rmm['maggies_ivar']
-    return _kcorrect.fit_coeffs(c, vfile, lfile, ffile)
+    return _kcorrect.fit_coeffs(c)
