@@ -1,2 +1,13 @@
 build/
 *.so
+C_*
+*.dat
+_*.c
+*.pdf
+*.ps
+__pycache__/
+*.txt
+fit_coeffs*
+scanf_c
+draft/
+

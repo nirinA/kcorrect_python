@@ -1,15 +1,16 @@
 from distutils.core import setup, Extension
 
-INC_DIR = ['/mnt/big/store/kcorrect/include']
+INC_DIR = ['/mnt/big/store/kcorrect/include',
+           '/mnt/sda6/Py330/lib/python3.3/site-packages/numpy/core/include']
 LIB_DIR = ['/mnt/big/store/kcorrect/lib']
-modulekcorrect = Extension('kcorrect',
+modulekcorrect = Extension('_kcorrect',
                            include_dirs = INC_DIR,
                            libraries = ['kcorrect', 'm'],
                            library_dirs = LIB_DIR,
-                           sources = ['kcorrectmodule.c'])
+                           sources = ['src/_kcorrectmodule.c'])
 
-setup (name = 'kcorrect20131006',
-      version = '0',
+setup (name = 'kcorrect_python',
+      version = '20131008',
       description = 'This is kcorrect for Python',
       ext_modules = [modulekcorrect,
                      ])
