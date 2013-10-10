@@ -14,10 +14,13 @@ static PyObject *kcorrectError;
 
 static IDL_LONG nz=1000;
 static IDL_LONG maxiter=10000;
+static IDL_LONG nprior=2;
 static float tolerance=1.e-6;
 static float zmin=0., zmax=1.e-0;
 static float band_shift=0.;
 
+static float *lprior=NULL;
+static float *zprior=NULL;
 static float *lambda=NULL;
 static float *vmatrix=NULL;
 static float *rmatrix=NULL;
@@ -287,12 +290,78 @@ PyDoc_STRVAR(kcorrect_reconstruct_maggies_doc,
 "reconstructs maggies from given coeffs and redshift"
 );
 
+static PyObject *
+kcorrect_fit_photoz(PyObject *self, PyObject *args)
+{
+    IDL_LONG j,niter;
+    PyArrayObject *pyin, *pyout;
+    float *cin, *cout;
+    npy_intp dims[] = {6};
+    PyArray_Descr * dsc;
+    dsc = PyArray_DescrFromType(NPY_FLOAT32);
+    if (!PyArg_ParseTuple(args, "O!",
+                          &PyArray_Type, &pyin))
+        return NULL;
+    if (NULL == pyin)  return NULL;
+    pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
+                                                 dsc,
+                                                 1,
+                                                 dims,
+                                                 NULL,
+                                                 NULL,
+                                                 0,
+                                                 NULL);
+    if (NULL == pyout)  return NULL;
+    cin=pyvector_to_Carrayptrs(pyin);
+    cout=pyvector_to_Carrayptrs(pyout);
+    lprior=(float *) malloc(nprior*sizeof(float));
+    zprior=(float *) malloc(nprior*sizeof(float));
+    zprior[0]=0.;
+    zprior[1]=1000.;
+    redshift=(float *) malloc(sizeof(float));
+    maggies=(float *) malloc(nk*sizeof(float));
+    maggies_ivar=(float *) malloc(nk*sizeof(float));
+    coeffs=(float *) malloc(nv*sizeof(float));
+    chi2=(float *) malloc(sizeof(float));
+    
+    maggies[0] = cin[0];
+    maggies[1] = cin[1];
+    maggies[2] = cin[2];
+    maggies[3] = cin[3];
+    maggies[4] = cin[4];
+    maggies_ivar[0] = cin[5];
+    maggies_ivar[1] = cin[6];
+    maggies_ivar[2] = cin[7];
+    maggies_ivar[3] = cin[8];
+    maggies_ivar[4] = cin[9];
+
+    k_fit_photoz(redshift,coeffs,rmatrix,nk,nv,zprior,lprior,nprior,zvals, 
+                 nz,maggies,maggies_ivar,1,tolerance,maxiter,&niter,
+                 chi2,0);
+    cout[0] = redshift[0];
+    for(j=0;j<nv;j++)   cout[1+j] = coeffs[j];
+
+    FREEVEC(redshift);
+    FREEVEC(maggies);
+    FREEVEC(maggies_ivar);
+    FREEVEC(coeffs);
+    FREEVEC(chi2);
+    
+    Py_INCREF(pyout); 
+    return PyArray_Return(pyout);                     
+}
+
+PyDoc_STRVAR(kcorrect_fit_photoz_doc,
+"returns guess at redshift"
+);
+
 static PyMethodDef kcorrect_methods[] = {
     {"load_templates", kcorrect_load_templates, METH_VARARGS, kcorrect_load_templates_doc},
     {"load_filters", kcorrect_load_filters, METH_VARARGS, kcorrect_load_filters_doc},
     {"fit_coeffs_from_file", kcorrect_fit_coeffs_from_file, METH_VARARGS, kcorrect_fit_coeffs_from_file_doc},
     {"fit_coeffs", kcorrect_fit_coeffs, METH_VARARGS, kcorrect_fit_coeffs_doc},
     {"reconstruct_maggies", kcorrect_reconstruct_maggies, METH_VARARGS, kcorrect_reconstruct_maggies_doc},
+    {"fit_photoz", kcorrect_fit_photoz, METH_VARARGS, kcorrect_fit_photoz_doc},
     {NULL,		NULL}		/* sentinel */
 };
 
