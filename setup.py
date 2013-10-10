@@ -1,8 +1,18 @@
 from distutils.core import setup, Extension
+try:
+    import numpy
+except ImportError:
+    raise SystemExit('requires NumPy version > 1.7.0') 
 
-INC_DIR = ['/mnt/big/store/kcorrect/include',
-           '/mnt/sda6/Py330/lib/python3.3/site-packages/numpy/core/include']
-LIB_DIR = ['/mnt/big/store/kcorrect/lib']
+import os
+try:
+    kcorrect_dir = os.environ['KCORRECT_DIR']
+except KeyError:
+    raise SystemExit('KCORRECT_DIR must be set') 
+    
+INC_DIR = [os.path.join(kcorrect_dir,'include'),
+           numpy.get_include()]
+LIB_DIR = [os.path.join(kcorrect_dir,'lib')]
 modulekcorrect = Extension('_kcorrect',
                            include_dirs = INC_DIR,
                            libraries = ['kcorrect', 'm'],
