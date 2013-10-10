@@ -105,15 +105,16 @@ static PyObject *
 kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
 {
     IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
-    char * cfile;
+    char * cfile, *ofile;
     PyArrayObject *cin, *cout;
     PyArray_Descr * dsc;
-    FILE *fp;
+    FILE *fp, *ofp;
     int nd;
 
-    if (!PyArg_ParseTuple(args, "s", &cfile))
+    if (!PyArg_ParseTuple(args, "ss", &cfile, &ofile))
         return NULL;
     fp=fopen(cfile,"r");
+    ofp=fopen(ofile,"w");
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
     cin = (PyArrayObject *)PyArray_FromFile(fp, dsc, -1, " ");
     nd=cin->dimensions[0]/11;
@@ -141,10 +142,10 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
                              maggies_ivar,redshift,ncurrchunk,tolerance,
                              maxiter,&niter,chi2,0,0);
 		for(i=0;i<ncurrchunk;i++) {
-			fprintf(stdout,"%e ",redshift[i]);
+			fprintf(ofp,"%e ",redshift[i]);
 			for(j=0;j<nv;j++)
-				fprintf(stdout,"%e ",coeffs[i*nv+j]);
-			fprintf(stdout,"\n");
+				fprintf(ofp,"%e ",coeffs[i*nv+j]);
+			fprintf(ofp,"\n");
 		} /* end for i */
 
     FREEVEC(redshift);

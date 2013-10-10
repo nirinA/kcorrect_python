@@ -20,21 +20,6 @@ except KeyError:
 import _kcorrect
 import numpy as np
 
-def read_maggies(mag):
-    redshifts = []
-    maggies = []
-    maggies_ivar = []
-    with open(mag) as dat:
-        for l in dat.readlines():
-            l = l.rstrip('\n').split()
-            r,m,m_i = l[0], l[1:6], l[6:]
-            redshifts.append(float(r))
-            maggies.append(list(map(float,m)))
-            maggies_ivar.append(list(map(float,m_i)))
-    return {'redshifts':redshifts,
-            'maggies':maggies,
-            'maggies_ivar':maggies_ivar}
-
 def load_templates(*args):
     vfile = "/mnt/big/store/kcorrect/data/templates/vmatrix.default.dat"
     lfile = "/mnt/big/store/kcorrect/data/templates/lambda.default.dat"
@@ -45,11 +30,8 @@ def load_filters(*args):
     _kcorrect.load_filters(ffile)
    
 def fit_coeffs_from_file(c, *args):
-##    rmm = read_maffies(cfile)
-##    redshifts = rmm['redshifts']
-##    maggies = rmm['maggies']
-##    maggies_ivar = rmm['maggies_ivar']
-    return _kcorrect.fit_coeffs_from_file(c)
+    outfile = 'coeffs.dat'
+    return _kcorrect.fit_coeffs_from_file(c, outfile)
 
 def fit_coeffs(c):
     return _kcorrect.fit_coeffs(np.array(c, dtype='float32'))
