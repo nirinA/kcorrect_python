@@ -1,5 +1,7 @@
 build/
 *.so
+*.pyc
+*.pyo
 C_*
 *.dat
 *.pdf

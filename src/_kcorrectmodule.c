@@ -10,14 +10,13 @@
 #include "numpy/npy_3kcompat.h"
 #include "numpy/arrayobject.h"
 
-static PyObject *kcorrectError;
+static PyObject *_kcorrectError;
 
 static IDL_LONG nz=1000;
 static IDL_LONG maxiter=10000;
 static IDL_LONG nprior=2;
 static float tolerance=1.e-6;
 static float zmin=0., zmax=1.e-0;
-static float band_shift=0.;
 
 static float *lprior=NULL;
 static float *zprior=NULL;
@@ -58,7 +57,7 @@ kcorrect_load_templates(PyObject *self, PyObject *args)
     FREEVEC(sizes);
     k_read_ascii_table(&lambda,&ndim,&sizes,lfile);
     if ((sizes[0]!=nl+1)  && PyErr_Occurred()) {
-            PyErr_SetString( kcorrectError,"vmatrix and lambda files incompatible.\n");
+            PyErr_SetString( _kcorrectError,"vmatrix and lambda files incompatible.\n");
             return NULL;;
     } /* end if */
     FREEVEC(sizes);
@@ -76,7 +75,8 @@ kcorrect_load_filters(PyObject *self, PyObject *args)
 {
     char * ffile;
     int i;
-    if (!PyArg_ParseTuple(args, "s", &ffile))
+    float band_shift;
+    if (!PyArg_ParseTuple(args, "sf", &ffile, &band_shift))
         return NULL;
 
     /* load in the filters */
@@ -108,7 +108,7 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
 {
     IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
     char * cfile, *ofile;
-    PyArrayObject *cin;
+    PyArrayObject *cin = NULL;
     PyArray_Descr * dsc;
     FILE *fp, *ofp;
     int nd;
@@ -245,11 +245,12 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     npy_intp dims[] = {6};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
-    //float b_shift, r;
-    if (!PyArg_ParseTuple(args, "O!", /*"O!dd",*/
-                          &PyArray_Type, &pyin)) //,
-                          /* &b_shift, &r)) not used for now */
+    float all_redshift;
+    if (!PyArg_ParseTuple(args, "O!f",
+                          &PyArray_Type, &pyin,
+                          &all_redshift))
         return NULL;
+    printf(" all r :%f\n", all_redshift);
     if (NULL == pyin)  return NULL;
     pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
                                                  dsc,
@@ -266,9 +267,11 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     redshift=(float *) malloc(sizeof(float));
     maggies=(float *) malloc(nk*sizeof(float));
     coeffs=(float *) malloc(nv*sizeof(float));
-    cout[0] = redshift[0] = cin[0];
-
-    //if(all_redshift!=-1.) redshift[0]=all_redshift;
+    if(all_redshift!=-1.) {
+        redshift[0]=all_redshift;
+    } else {
+        redshift[0]=cin[0];
+    }
 
     coeffs[0] = cin[1];
     coeffs[1] = cin[2];
@@ -276,6 +279,7 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     coeffs[3] = cin[4];
     coeffs[4] = cin[5];
     k_reconstruct_maggies(zvals,nz,rmatrix,nk,nv,coeffs,redshift,maggies,1);
+    cout[0] = redshift[0];
     for(j=0;j<nv;j++)   cout[1+j] = maggies[j];
 
     FREEVEC(redshift);
@@ -369,6 +373,7 @@ PyDoc_STRVAR(module_doc,
 "This module provides kcorrect"
 );
 
+#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef kcorrectmodule = {
 	PyModuleDef_HEAD_INIT,
 	"kcorrect",
@@ -381,7 +386,6 @@ static struct PyModuleDef kcorrectmodule = {
 	NULL
 };
 
-
 PyMODINIT_FUNC
 PyInit__kcorrect(void)
 {
@@ -390,8 +394,24 @@ PyInit__kcorrect(void)
 	import_array();
         if (m == NULL)
             return NULL;
-        kcorrectError = PyErr_NewException("kcorrect.error", NULL, NULL);
-        Py_INCREF(kcorrectError);
-        PyModule_AddObject(m, "error", kcorrectError);
+        _kcorrectError = PyErr_NewException("_kcorrect.error", NULL, NULL);
+        Py_INCREF(_kcorrectError);
+        PyModule_AddObject(m, "error", _kcorrectError);
         return m;
 }
+#else
+PyMODINIT_FUNC
+init_kcorrect(void)
+{
+	PyObject *m;
+	m = Py_InitModule3("_kcorrect", kcorrect_methods, module_doc);
+	import_array();
+	if (m == NULL)
+            goto finally;
+        _kcorrectError = PyErr_NewException("_kcorrect.error", NULL, NULL);
+        Py_INCREF(_kcorrectError);
+        PyModule_AddObject(m, "error", _kcorrectError);
+        finally:
+        return;
+}
+#endif
