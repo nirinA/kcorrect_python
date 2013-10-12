@@ -113,6 +113,16 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
     FILE *fp, *ofp;
     int nd;
 
+    if ((NULL ==vmatrix) && (NULL == lambda)) {
+            PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+            return NULL;;
+    } /* end if */
+
+    if (NULL == rmatrix) {
+            PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+            return NULL;;
+    } /* end if */
+
     if (!PyArg_ParseTuple(args, "ss", &cfile, &ofile))
         return NULL;
     fp=fopen(cfile,"r");
@@ -162,7 +172,7 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(kcorrect_fit_coeffs_from_file_doc,
-"writes the computed coeffs onto a file\n\
+"writes the computed coeffs to a file\n\
 with redshift and maggies read from a given file"
 );
 
@@ -175,6 +185,16 @@ kcorrect_fit_coeffs(PyObject *self, PyObject *args)
     npy_intp dims[] = {6};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
+
+    if ((NULL ==vmatrix) && (NULL == lambda)) {
+            PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+            return NULL;;
+    } /* end if */
+
+    if (NULL == rmatrix) {
+            PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+            return NULL;;
+    } /* end if */
 
     if (!PyArg_ParseTuple(args, "O!", &PyArray_Type, &pyin))
         return NULL;
@@ -246,11 +266,21 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
     float all_redshift;
+
+    if ((NULL ==vmatrix) && (NULL == lambda)) {
+            PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+            return NULL;;
+    } /* end if */
+
+    if (NULL == rmatrix) {
+            PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+            return NULL;;
+    } /* end if */
+
     if (!PyArg_ParseTuple(args, "O!f",
                           &PyArray_Type, &pyin,
                           &all_redshift))
         return NULL;
-    printf(" all r :%f\n", all_redshift);
     if (NULL == pyin)  return NULL;
     pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
                                                  dsc,
@@ -303,6 +333,17 @@ kcorrect_fit_photoz(PyObject *self, PyObject *args)
     npy_intp dims[] = {6};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
+
+    if ((NULL ==vmatrix) && (NULL == lambda)) {
+            PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+            return NULL;;
+    } /* end if */
+
+    if (NULL == rmatrix) {
+            PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+            return NULL;;
+    } /* end if */
+
     if (!PyArg_ParseTuple(args, "O!",
                           &PyArray_Type, &pyin))
         return NULL;
@@ -350,13 +391,15 @@ kcorrect_fit_photoz(PyObject *self, PyObject *args)
     FREEVEC(maggies_ivar);
     FREEVEC(coeffs);
     FREEVEC(chi2);
+    FREEVEC(lprior);
+    FREEVEC(zprior);
     
     Py_INCREF(pyout); 
     return PyArray_Return(pyout);                     
 }
 
 PyDoc_STRVAR(kcorrect_fit_photoz_doc,
-"returns guess at redshift"
+"returns guessed coeffs at redshift"
 );
 
 static PyMethodDef kcorrect_methods[] = {

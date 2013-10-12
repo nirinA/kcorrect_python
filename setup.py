@@ -20,7 +20,10 @@ modulekcorrect = Extension('_kcorrect',
                            sources = ['src/_kcorrectmodule.c'])
 
 setup (name = 'kcorrect_python',
-      version = '20131008',
-      description = 'This is kcorrect for Python',
-      ext_modules = [modulekcorrect,
-                     ])
+       version = '2013.10.12',
+       description = 'Python wrapper for Kcorrect library',
+       url = 'https://github.com/nirinA/kcorrect_python',
+       author = 'nirina raseliarison',
+       author_email = 'nirina.raseliarison@gmail.com',
+       ext_modules = [modulekcorrect],
+       license = 'Public Domain')

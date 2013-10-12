@@ -1,31 +1,149 @@
-***
+***************
 kcorrect_python
-***
+***************
+
+This package provides Python interface to kcorrect C library by 
+M. Blanton et al. and described here:
+ http://adsabs.harvard.edu/abs/2007AJ....133..734B
 
 requirements
-===
+============
 
 kcorrect
-numpy
+--------
+
+see:
+    
+  http://howdy.physics.nyu.edu/index.php/Kcorrect
+
+for obtaining kcorrect and how to install it.
+
+This wrapper uses kcorrect version 4.2.
+  
+Python and dependencies
+-----------------------
+
+This version requires Python 2.7+ and NumPy 1.7+
 
 installation
-===
+============
 
-kcorrect installation
----
+the usual::
 
-numpy
----
-usual python setup.py install
+    python setup.py build
 
-kcorrect_python
----
+and (may need root privileges) ::
 
-example of usage
-===
+    python setup.py install
 
->>> import kcorrect
->>> load templates and filters
->>> from file
->>> from list array tuples
+should build the package and install *kcorret.so*
+into the standard *site-packages* directory.
 
+usage
+=====
+
+Note: the environmental variables *KCORRECT_DIR* and
+*LD_LIBRARY_PATH* should be set and point to the location
+where the kcorrect package is installed, eg::
+
+    export KCORRECT_DIR=/usr/local/kcorrect
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$KCORRECT_DIR/lib
+
+test
+----
+
+you can test the package by running::
+
+    python test.py
+
+this will procude two files *coeffs.dat* and
+*reconstructed_maggies.dat".
+
+available functions
+-------------------
+
+The following functions are currently available for this version:
+
+    o :func:`load_templates` 
+    o :func:`load_filters` 
+    o :func:`fit_coeffs_from_file` 
+    o :func:`fit_coeffs` 
+    o :func:`reconstruct_maggies` 
+    o :func:`reconstruct_maggies_from_files` 
+    o :func:`fit_photoz` 
+    o :func:`fit_photoz_from_file` 
+
+examples
+--------
+
+The example below uses the data shipped with kcorrect.v4_2.
+You can use the module as follow::
+
+    >>> import kcorrect, numpy
+    >>> kcorrect.load_templates()
+    >>> kcorrect.load_filters()
+    >>> a=[0.03077382, 1.144068e-08, 5.262234e-08, 8.210213e-08, 8.744532e-08, 1.017738e-07, 6.216309e+16, 3.454767e+17, 1.827409e+17, 1.080889e+16, 3163927000000000.0]
+    >>> c = kcorrect.fit_coeffs(a)
+    >>> c
+    array([  3.07738204e-02,   2.02254747e-14,   1.49129165e-35,
+         2.15513887e-06,   6.94462278e-06,   1.78061924e-13], dtype=float32)
+    >>> m = kcorrect.reconstruct_maggies(c)
+    >>> m
+    array([  3.07738204e-02,   1.44426586e-08,   5.28384980e-08,
+         8.09117182e-08,   9.51680121e-08,   1.10408600e-07], dtype=float32)
+
+The example above successively loads the module,
+loads the default templates, *vmatrix.default.dat*
+and *lambda.default.dat*, loads the default filter,
+*sdss_filters.dat*, then computes the coeffs and
+reconstructs maggies.
+
+To use different templates, you load them as follow::
+    
+    >>> kcorrect.load_templates(v='vmatrix.goods.dat',l='lambda.goods.dat')
+
+If templates and filters are not loaded before calling the other
+functions, error is raised::
+    
+    >>> kcorrect.fit_coeffs(range(11))
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "kcorrect.py", line 37, in fit_coeffs
+        return _kcorrect.fit_coeffs(c)
+    _kcorrect.error: no filters loaded.
+
+To compute the reconstructed maggies at rest-frame with bandpasses
+shifted by 0.1, you need first reload the filters with the given
+band_shift, then compute the coeffs and the maggies::
+    
+    >>> kcorrect.load_filters(band_shift=0.1)
+    >>> m0 = kcorrect.reconstruct_maggies(c, redshift=0.)
+
+the K-correction is then given by::
+
+    >>> K = -2.5*numpy.log10(m/m0)
+
+If the redshifs, maggies and maggies_invvar are stored
+in a file like *sample.dat* found in the *test* directory
+of kcorrect package, you can use :func:`fit_coeffs_from_file`
+and :func:`reconstruct_maggies_from_files`  to perform the
+computation::
+
+    >>> kcorrect.fit_coeffs_from_file('some_file.dat', outfile='output_coeffs.dat')
+    >>> kcorrect.reconstruct_maggies_from_files('output_coeffs.dat', outfile='computed_maggies.dat')
+
+these produce 2 files *output_coeffs.dat* and *computed_maggies.dat*
+
+:func:`fit_photoz` and  :func:`fit_photoz_from_file` can be used
+as follow, after loading the appropriate templates and filter::
+
+    >>> p = kcorrect.fit_photoz(a[1:])
+    >>> p
+    array([  1.41886109e-02,   5.18920551e-09,   6.65258128e-36,
+         2.18073205e-06,   5.97664302e-06,   4.88666385e-14], dtype=float32)
+
+if the data are from a file *photoz.dat*::
+
+    >>> fit_photoz('photoz.dat', outfile='photoz.out')
+
+which produces the result to the output file *photoz.out*

@@ -11,4 +11,5 @@ __pycache__/
 fit_coeffs*
 scanf_c
 draft/
+*.diff
 
