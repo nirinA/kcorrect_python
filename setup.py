@@ -25,5 +25,6 @@ setup (name = 'kcorrect_python',
        url = 'https://github.com/nirinA/kcorrect_python',
        author = 'nirina raseliarison',
        author_email = 'nirina.raseliarison@gmail.com',
+       py_modules=['kcorrect'],
        ext_modules = [modulekcorrect],
        license = 'Public Domain')

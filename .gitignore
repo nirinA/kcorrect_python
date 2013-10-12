@@ -1,3 +1,4 @@
+dist/
 build/
 *.so
 *.pyc
@@ -12,4 +13,5 @@ fit_coeffs*
 scanf_c
 draft/
 *.diff
+MANIFEST
 

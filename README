@@ -98,6 +98,24 @@ and *lambda.default.dat*, loads the default filter,
 *sdss_filters.dat*, then computes the coeffs and
 reconstructs maggies.
 
+To compute the reconstructed maggies at rest-frame with bandpasses
+shifted by 0.1, you need first reload the filters with the given
+band_shift, then compute the coeffs and the maggies::
+    
+    >>> kcorrect.load_filters(band_shift=0.1)
+    >>> m0 = kcorrect.reconstruct_maggies(c, redshift=0.)
+
+If the redshifs, maggies and maggies_invvar are stored
+in a file like *sample.dat* found in the *test* directory
+of kcorrect package, you can use :func:`fit_coeffs_from_file`
+and :func:`reconstruct_maggies_from_files`  to perform the
+computation::
+
+    >>> kcorrect.fit_coeffs_from_file('some_file.dat', outfile='output_coeffs.dat')
+    >>> kcorrect.reconstruct_maggies_from_files('output_coeffs.dat', outfile='computed_maggies.dat')
+
+these produce 2 files *output_coeffs.dat* and *computed_maggies.dat*
+
 To use different templates, you load them as follow::
     
     >>> kcorrect.load_templates(v='vmatrix.goods.dat',l='lambda.goods.dat')
@@ -111,28 +129,6 @@ functions, error is raised::
       File "kcorrect.py", line 37, in fit_coeffs
         return _kcorrect.fit_coeffs(c)
     _kcorrect.error: no filters loaded.
-
-To compute the reconstructed maggies at rest-frame with bandpasses
-shifted by 0.1, you need first reload the filters with the given
-band_shift, then compute the coeffs and the maggies::
-    
-    >>> kcorrect.load_filters(band_shift=0.1)
-    >>> m0 = kcorrect.reconstruct_maggies(c, redshift=0.)
-
-the K-correction is then given by::
-
-    >>> K = -2.5*numpy.log10(m/m0)
-
-If the redshifs, maggies and maggies_invvar are stored
-in a file like *sample.dat* found in the *test* directory
-of kcorrect package, you can use :func:`fit_coeffs_from_file`
-and :func:`reconstruct_maggies_from_files`  to perform the
-computation::
-
-    >>> kcorrect.fit_coeffs_from_file('some_file.dat', outfile='output_coeffs.dat')
-    >>> kcorrect.reconstruct_maggies_from_files('output_coeffs.dat', outfile='computed_maggies.dat')
-
-these produce 2 files *output_coeffs.dat* and *computed_maggies.dat*
 
 :func:`fit_photoz` and  :func:`fit_photoz_from_file` can be used
 as follow, after loading the appropriate templates and filter::
