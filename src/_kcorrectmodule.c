@@ -113,7 +113,7 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
     FILE *fp, *ofp;
     int nd;
 
-    if ((NULL ==vmatrix) && (NULL == lambda)) {
+    if ((NULL == vmatrix) && (NULL == lambda)) {
             PyErr_SetString( _kcorrectError,"no templates loaded.\n");
             return NULL;;
     } /* end if */
@@ -186,7 +186,7 @@ kcorrect_fit_coeffs(PyObject *self, PyObject *args)
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
 
-    if ((NULL ==vmatrix) && (NULL == lambda)) {
+    if ((NULL == vmatrix) && (NULL == lambda)) {
             PyErr_SetString( _kcorrectError,"no templates loaded.\n");
             return NULL;;
     } /* end if */
@@ -233,13 +233,7 @@ kcorrect_fit_coeffs(PyObject *self, PyObject *args)
     k_fit_nonneg(coeffs,rmatrix,nk,nv,zvals,nz,
                  maggies,maggies_ivar,redshift,
                  1,tolerance,maxiter,&niter,chi2,0,0);
-/*
-    fprintf(stdout,"%e ",redshift[0]);
-    for(j=0;j<nv;j++)    fprintf(stdout,"%e ",coeffs[j]);
-    fprintf(stdout,"\n");
-    Py_INCREF(Py_None);
-    return Py_None;
-*/
+
     for(j=0;j<nv;j++)   cout[1+j] = coeffs[j];
 
     FREEVEC(redshift);
@@ -267,7 +261,7 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
     float all_redshift;
 
-    if ((NULL ==vmatrix) && (NULL == lambda)) {
+    if ((NULL == vmatrix) && (NULL == lambda)) {
             PyErr_SetString( _kcorrectError,"no templates loaded.\n");
             return NULL;;
     } /* end if */

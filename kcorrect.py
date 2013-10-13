@@ -1,7 +1,4 @@
 '''Python wrapper for kcorrect
-TODO:
-. check ref count
-. label goto fail
 '''
 import os
 try:
