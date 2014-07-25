@@ -9,19 +9,29 @@ except KeyError:
 import _kcorrect
 import numpy
 
-def load_templates(v="vmatrix.default.dat",l="lambda.default.dat"):
-    vfile = os.path.join(os.environ['KCORRECT_DIR'], 'data/templates', v)
+def load_templates(v="vmatrix.default.dat",
+                   l="lambda.default.dat",
+                   templates_dir='data/templates'):
+    vfile = os.path.join(os.environ['KCORRECT_DIR'],
+                         templates_dir,
+                         v)
     if not os.path.isfile(vfile):
-        raise _kcorrect.error('file: %s not found'%v)
-    lfile = os.path.join(os.environ['KCORRECT_DIR'], 'data/templates', l)
+        raise _kcorrect.error('file: %s not found'%vfile)
+    lfile = os.path.join(os.environ['KCORRECT_DIR'],
+                         templates_dir,
+                         l)
     if not os.path.isfile(lfile):
-        raise _kcorrect.error('file: %s not found'%l)
+        raise _kcorrect.error('file: %s not found'%lfile)
     _kcorrect.load_templates(vfile, lfile)
 
-def load_filters(f="sdss_filters.dat", band_shift=0.):
-    ffile = os.path.join(os.environ['KCORRECT_DIR'], 'data/templates', f)
+def load_filters(f="sdss_filters.dat",
+                 band_shift=0.,
+                 filters_dir='data/templates'):
+    ffile = os.path.join(os.environ['KCORRECT_DIR'],
+                         filters_dir,
+                         f)
     if not os.path.isfile(ffile):
-        raise _kcorrect.error('file: %s not found'%f)
+        raise _kcorrect.error('file: %s not found'%ffile)
     _kcorrect.load_filters(ffile, band_shift)
    
 def fit_coeffs_from_file(c, outfile = 'coeffs.dat'):
@@ -29,9 +39,11 @@ def fit_coeffs_from_file(c, outfile = 'coeffs.dat'):
 
 def fit_coeffs(c):
     c = numpy.array(c, dtype='float32')    
-    if len(c) != 11:
-        raise _kcorrect.error('incompatible number of arguments! should be 11')
-    return _kcorrect.fit_coeffs(c)
+    if len(c) in [11, 15]:
+        return _kcorrect.fit_coeffs(c)
+    else:
+        raise _kcorrect.error('incompatible number of arguments!')
+    
 
 def reconstruct_maggies(c, redshift=-1.):
     c = numpy.array(c, dtype='float32')

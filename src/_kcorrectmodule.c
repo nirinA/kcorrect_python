@@ -37,7 +37,8 @@ static float *chi2=NULL;
 
 float *pyvector_to_Carrayptrs(PyArrayObject *arrayin);
 
-float *pyvector_to_Carrayptrs(PyArrayObject *arrayin)  {
+float *pyvector_to_Carrayptrs(PyArrayObject *arrayin)
+{
     /* pointer to arrayin data as float */
     return (float *) arrayin->data; 
 }
@@ -57,7 +58,7 @@ kcorrect_load_templates(PyObject *self, PyObject *args)
     FREEVEC(sizes);
     k_read_ascii_table(&lambda,&ndim,&sizes,lfile);
     if ((sizes[0]!=nl+1)  && PyErr_Occurred()) {
-            PyErr_SetString( _kcorrectError,"vmatrix and lambda files incompatible.\n");
+            PyErr_SetString( _kcorrectError,"incompatible vmatrix and lambda files.\n");
             return NULL;;
     } /* end if */
     FREEVEC(sizes);
@@ -67,7 +68,7 @@ kcorrect_load_templates(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(kcorrect_load_templates_doc,
-"loads the templates"
+"loads the templates."
 );
 
 static PyObject *
@@ -100,13 +101,14 @@ kcorrect_load_filters(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(kcorrect_load_filters_doc,
-"loads the filters"
+"loads the filters."
 );
 
 static PyObject *
 kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
 {
     IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
+    float *mag;
     char * cfile, *ofile;
     PyArrayObject *cin = NULL;
     PyArray_Descr * dsc;
@@ -132,7 +134,6 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
     fclose(fp);
     nd=cin->dimensions[0]/11;
     nchunk=nd;
-    float *mag;
     mag=pyvector_to_Carrayptrs(cin);
     redshift=(float *) malloc((nchunk+1)*sizeof(float));
     maggies=(float *) malloc((nchunk+1)*nk*sizeof(float));
@@ -256,10 +257,10 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     IDL_LONG j;
     PyArrayObject *pyin, *pyout;
     float *cin, *cout;
+    float all_redshift;
     npy_intp dims[] = {6};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
-    float all_redshift;
 
     if ((NULL == vmatrix) && (NULL == lambda)) {
             PyErr_SetString( _kcorrectError,"no templates loaded.\n");
