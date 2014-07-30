@@ -48,18 +48,23 @@ kcorrect_load_templates(PyObject *self, PyObject *args)
 {
     char * vfile;
     char * lfile;
+    IDL_LONG k;
     if (!PyArg_ParseTuple(args, "ss", &vfile, &lfile))
         return NULL;
 
     /* read in templates */
-    k_read_ascii_table(&vmatrix,&ndim,&sizes,vfile);
+    k = k_read_ascii_table(&vmatrix,&ndim,&sizes,vfile);
+    if ((k!=1) && PyErr_Occurred()) {
+	PyErr_SetString( _kcorrectError,"unable to read vmatrix template.\n");
+	return NULL;
+    }
     nl=sizes[1];
     nv=sizes[0];
     FREEVEC(sizes);
     k_read_ascii_table(&lambda,&ndim,&sizes,lfile);
-    if ((sizes[0]!=nl+1)  && PyErr_Occurred()) {
-            PyErr_SetString( _kcorrectError,"incompatible vmatrix and lambda files.\n");
-            return NULL;;
+    if ((sizes[0]!=nl+1) && PyErr_Occurred()) {
+        PyErr_SetString( _kcorrectError,"incompatible vmatrix and lambda files.\n");
+        return NULL;
     } /* end if */
     FREEVEC(sizes);
 
@@ -103,6 +108,82 @@ kcorrect_load_filters(PyObject *self, PyObject *args)
 PyDoc_STRVAR(kcorrect_load_filters_doc,
 "loads the filters."
 );
+
+static PyObject *
+kcorrect_projection_table(PyObject *self, PyObject *args)
+{
+    PyArrayObject *py_lambda, *py_vmatrix, *py_rmatrix=NULL;
+    npy_intp *shape;
+    PyObject *newshape, *av, *al, *_iter = NULL;
+    float *_lambda, *_vmatrix;
+    float *_rmatrix=NULL;
+    float *_zvals=NULL;
+    IDL_LONG _nk,_nv,_nl;
+    float *_filter_lambda=NULL;
+    float *_filter_pass=NULL;
+    IDL_LONG *_filter_n=NULL;
+    IDL_LONG _maxn, _nz=1000;
+    char * ffile;
+    int i, ndim;
+    float band_shift;
+    npy_intp *dims=NULL;
+    PyArray_Descr * dsc;
+    if (!PyArg_ParseTuple(args, "O!O!fs|i",
+			  &PyArray_Type, &py_vmatrix,
+			  &PyArray_Type, &py_lambda,
+			  &band_shift, &ffile, &_nz))
+        return NULL;
+    ndim = PyArray_NDIM(py_vmatrix);
+    shape = PyArray_DIMS(py_vmatrix); /*PyArray_SHAPE(py_vmatrix); */
+    _nv = shape[0];
+    _nl = shape[1];
+    newshape = Py_BuildValue("(i)", _nv*_nl);
+    _lambda = pyvector_to_Carrayptrs(py_lambda);
+    _vmatrix = pyvector_to_Carrayptrs((PyArrayObject *)PyArray_Reshape(py_vmatrix, newshape));
+    k_load_filters(&_filter_n,&_filter_lambda,&_filter_pass,&_maxn,&_nk,ffile);
+    _rmatrix=(float *) malloc(_nz*_nv*_nk*sizeof(float));
+    dims=(npy_intp *) malloc(sizeof(npy_intp));    
+    dims[0] = _nz*_nv*_nk;
+    dsc = PyArray_DescrFromType(NPY_FLOAT);
+    _zvals=(float *) malloc(_nz*sizeof(float));
+    for(i=0;i<_nz;i++)
+        _zvals[i]=zmin+(zmax-zmin)*((float)i+0.5)/(float)_nz;
+    k_projection_table(_rmatrix,_nk,_nv,_vmatrix,_lambda,_nl,_zvals,_nz,_filter_n,
+                       _filter_lambda,_filter_pass,band_shift,_maxn);
+
+    py_rmatrix = (PyArrayObject *) PyArray_Zeros(1, dims, dsc, 0);
+    if (NULL == py_rmatrix)  goto fail;
+    _iter = PyArray_IterNew((PyObject*)py_rmatrix);
+    if (_iter == NULL) goto fail;
+    for(i=0;i<_nz*_nv*_nk;i++){
+        if (PyArray_SETITEM(py_rmatrix, PyArray_ITER_DATA(_iter), PyFloat_FromDouble(_rmatrix[i]))) {
+            PyErr_SetString(_kcorrectError, "unable to set _rmatrix");
+            return NULL;
+         }
+         PyArray_ITER_NEXT(_iter);
+    }
+
+    FREEVEC(_rmatrix);
+    FREEVEC(_zvals);
+    FREEVEC(dims);
+    Py_DECREF(_iter);
+    Py_INCREF(py_rmatrix);
+    return PyArray_Return(py_rmatrix);
+fail:
+    Py_XDECREF(_iter);
+    Py_XDECREF(py_rmatrix);
+    return NULL;
+
+
+    /*return PyArray_Reshape(py_vmatrix, newshape);*/
+    /*return PyArray_Return(py_rmatrix);*/
+    /*return Py_BuildValue("ddi",_rmatrix[0], _vmatrix[1], dims[0]);*/
+}
+
+PyDoc_STRVAR(kcorrect_projection_table_doc,
+"create the lookup table for given wavelength and flux."
+);
+
 
 static PyObject *
 kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
@@ -397,6 +478,55 @@ PyDoc_STRVAR(kcorrect_fit_photoz_doc,
 "returns guessed coeffs at redshift"
 );
 
+static PyObject *
+kcorrect_k_template(PyObject *self, PyObject *args)
+{
+    float *v = NULL;
+    char *vfile;
+    PyArrayObject *pyout;
+    PyArray_Descr *dsc;
+    PyObject *pyout_iter = NULL;
+    npy_intp *dims=NULL;
+    IDL_LONG n, *s=NULL;
+    int i,j=1;
+    dsc = PyArray_DescrFromType(NPY_FLOAT);
+    if (!PyArg_ParseTuple(args, "s", &vfile))
+        return NULL;
+    k_read_ascii_table(&v,&n,&s,vfile);
+    dims = (npy_intp *) malloc((n)*sizeof(npy_intp));    
+    if (NULL == dims) return NULL;
+    for (i=0; i<n; i++) {
+        dims[i] = s[i];
+	j *= s[i];
+    }
+    pyout = (PyArrayObject *) PyArray_Zeros((npy_intp)n, dims, dsc, 0);
+    if (NULL == pyout)  goto fail;
+    pyout_iter = PyArray_IterNew((PyObject*)pyout);
+    if (pyout_iter == NULL) {
+        PyErr_SetString(_kcorrectError, "cannot create iterators");
+        goto fail;
+    }
+    for (i=0;i<j;i++) {
+      if (PyArray_SETITEM(pyout, PyArray_ITER_DATA(pyout_iter), PyFloat_FromDouble((double)v[i]))) {
+	    PyErr_SetString(_kcorrectError, "unable to set vmatrix");
+	    goto fail;
+	}
+        PyArray_ITER_NEXT(pyout_iter);
+    }
+    Py_DECREF(pyout_iter);
+    Py_INCREF(pyout);
+    return PyArray_Return(pyout);
+
+fail:
+    Py_XDECREF(pyout_iter);
+    Py_XDECREF(pyout);
+    return NULL;
+}
+
+PyDoc_STRVAR(kcorrect_k_template_doc,
+"return vmatrix or lambda from a template file."
+);
+
 static PyMethodDef kcorrect_methods[] = {
     {"load_templates", kcorrect_load_templates, METH_VARARGS, kcorrect_load_templates_doc},
     {"load_filters", kcorrect_load_filters, METH_VARARGS, kcorrect_load_filters_doc},
@@ -404,11 +534,13 @@ static PyMethodDef kcorrect_methods[] = {
     {"fit_coeffs", kcorrect_fit_coeffs, METH_VARARGS, kcorrect_fit_coeffs_doc},
     {"reconstruct_maggies", kcorrect_reconstruct_maggies, METH_VARARGS, kcorrect_reconstruct_maggies_doc},
     {"fit_photoz", kcorrect_fit_photoz, METH_VARARGS, kcorrect_fit_photoz_doc},
+    {"k_template", kcorrect_k_template, METH_VARARGS, kcorrect_k_template_doc},
+    {"projection_table", kcorrect_projection_table, METH_VARARGS, kcorrect_projection_table_doc},
     {NULL,		NULL}		/* sentinel */
 };
 
 PyDoc_STRVAR(module_doc,
-"This module provides kcorrect"
+"This module provides Python wrapper for kcorrect library"
 );
 
 #if PY_VERSION_HEX >= 0x03000000
