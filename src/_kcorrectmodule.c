@@ -187,14 +187,16 @@ _kcorrect_fit_nonneg(PyObject *self, PyObject *args)
     /* rmatrix,nk,nv,zvals,nz should be already set with load_filters */
 
     PyArrayObject *py_maggies, *py_maggies_ivar, *py_coeffs=NULL;
-    npy_intp *shape;
-    PyObject *m_iter, *mi_iter = NULL;
     float r, *c_maggies, *c_maggies_ivar, *c_coeffs;
     int i;
     IDL_LONG niter;
     npy_intp dims[] = {nv};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
+    if (NULL == vmatrix || NULL == lambda ) { 
+        PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+        return NULL;;
+    } /* end if */
     if (NULL == rmatrix) { 
         PyErr_SetString( _kcorrectError,"no filters loaded.\n");
         return NULL;;
@@ -244,9 +246,8 @@ _kcorrect_fit_nonneg(PyObject *self, PyObject *args)
                                                  NULL);
     if (NULL == py_coeffs)  return NULL;
     c_coeffs=pyvector_to_Carrayptrs(py_coeffs);
-    for(i=0;i<nv;i++)   c_coeffs[i] = coeffs[i];
+    for(i=0;i<nv;i++) c_coeffs[i] = coeffs[i];
     return PyArray_Return(py_coeffs);
-    /*return Py_BuildValue("fff", rmatrix[0], maggies_ivar[0], coeffs[0]);*/
 }
 
 PyDoc_STRVAR(_kcorrect_fit_nonneg_doc,
@@ -547,7 +548,7 @@ PyDoc_STRVAR(_kcorrect_fit_photoz_doc,
 );
 
 static PyObject *
-_kcorrect_k_template(PyObject *self, PyObject *args)
+_kcorrect_template(PyObject *self, PyObject *args)
 {
     float *v = NULL;
     char *vfile;
@@ -591,7 +592,7 @@ fail:
     return NULL;
 }
 
-PyDoc_STRVAR(_kcorrect_k_template_doc,
+PyDoc_STRVAR(_kcorrect_template_doc,
 "return vmatrix or lambda from a template file."
 );
 
@@ -613,7 +614,7 @@ static PyMethodDef kcorrect_methods[] = {
     {"fit_coeffs", _kcorrect_fit_coeffs, METH_VARARGS, _kcorrect_fit_coeffs_doc},
     {"reconstruct_maggies", _kcorrect_reconstruct_maggies, METH_VARARGS, _kcorrect_reconstruct_maggies_doc},
     {"fit_photoz", _kcorrect_fit_photoz, METH_VARARGS, _kcorrect_fit_photoz_doc},
-    {"k_template", _kcorrect_k_template, METH_VARARGS, _kcorrect_k_template_doc},
+    {"template", _kcorrect_template, METH_VARARGS, _kcorrect_template_doc},
     {"projection_table", _kcorrect_projection_table, METH_VARARGS, _kcorrect_projection_table_doc},
     {"fit_nonneg", _kcorrect_fit_nonneg, METH_VARARGS, _kcorrect_fit_nonneg_doc},
     {"band_shift", (PyCFunction)_kcorrect_band_shift, METH_NOARGS, _kcorrect_band_shift_doc},

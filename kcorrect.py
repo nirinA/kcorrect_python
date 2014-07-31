@@ -141,3 +141,17 @@ def solar_magnitudes(solarname='lcbsun.ori',
     mag = -2.5*numpy.log10(maggies.reshape((maggies.size,)))
     return mag
 
+def fit_nonneg(redshift, maggies, maggies_ivar):
+    '''Fit nonnegative sum of given templates to given set of maggies'''
+    redshift = numpy.array(redshift, dtype=numpy.float32)
+    maggies = numpy.array(maggies, dtype=numpy.float32)
+    maggies_ivar = numpy.array(maggies_ivar, dtype=numpy.float32)
+    return _kcorrect.fit_nonneg(redshift, maggies, maggies_ivar)
+
+def template(t, templates_dir='data/templates'):
+    tfile = os.path.join(os.environ['KCORRECT_DIR'], templates_dir, t)
+    if not os.path.isfile(tfile):
+        raise _kcorrect.error('file: %s not found'%tfile)
+    return _kcorrect.template(tfile)
+
+    

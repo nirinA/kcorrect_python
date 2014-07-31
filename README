@@ -59,7 +59,7 @@ you can test the package by running::
 this will procude two files *coeffs.dat* and
 *reconstructed_maggies.dat".
 
-available functions
+Available functions
 -------------------
 
 The following functions are currently available for this version:
@@ -71,18 +71,24 @@ The following functions are currently available for this version:
     o :func:`reconstruct_maggies` 
     o :func:`reconstruct_maggies_from_files` 
     o :func:`fit_photoz` 
-    o :func:`fit_photoz_from_file` 
+    o :func:`fit_photoz_from_file`
+    o :func:`solar_magnitudes`
+    o :func:`project_filters`
 
-examples
+Examples
 --------
 
-The example below uses the data shipped with kcorrect.v4_2.
+Note: The examples below use the data shipped with kcorrect.v4_2.
+
+default usage
+^^^^^^^^^^^^^
+
 You can use the module as follow::
 
     >>> import kcorrect, numpy
     >>> kcorrect.load_templates()
     >>> kcorrect.load_filters()
-    >>> a=[0.03077382, 1.144068e-08, 5.262234e-08, 8.210213e-08, 8.744532e-08, 1.017738e-07, 6.216309e+16, 3.454767e+17, 1.827409e+17, 1.080889e+16, 3163927000000000.0]
+    >>> a = numpy.array([0.03077382, 1.144068e-08, 5.262234e-08, 8.210213e-08, 8.744532e-08, 1.017738e-07, 6.216309e+16, 3.454767e+17, 1.827409e+17, 1.080889e+16, 3163927000000000.0], dtype='float32')
     >>> c = kcorrect.fit_coeffs(a)
     >>> c
     array([  3.07738204e-02,   2.02254747e-14,   1.49129165e-35,
@@ -97,6 +103,12 @@ loads the default templates, *vmatrix.default.dat*
 and *lambda.default.dat*, loads the default filter,
 *sdss_filters.dat*, then computes the coeffs and
 reconstructs maggies.
+
+The argument, ``a``, of :func:`fit_coeffs` consists of::
+
+    >>> a[0] # redshift
+    >>> a[1:6] # maggies
+    >>> a[6:12] # maggies_ivar
 
 To compute the reconstructed maggies at rest-frame with bandpasses
 shifted by 0.1, you need first reload the filters with the given
@@ -143,3 +155,21 @@ if the data are from a file *photoz.dat*::
     >>> fit_photoz('photoz.dat', outfile='photoz.out')
 
 which produces the result to the output file *photoz.out*
+
+using individual function
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+some functions can be used individually; see, for example,
+the function :func:`solar_magnitudes`
+
+:func:`fit_coeffs` can be executed sequentially as follow::
+
+    >>> r=0.03077382
+    >>> m=numpy.array([1.144068e-08, 5.262234e-08, 8.210213e-08, 8.744532e-08, 1.017738e-07], dtype='float32')
+    >>> mi=numpy.array([6.216309e+16, 3.454767e+17, 1.827409e+17, 1.080889e+16, 3163927000000000.0], dtype='float32')
+    >>> c=kcorrect.fit_nonneg(r, m, mi)
+    >>> c
+    array([  2.02254747e-14,   1.49129165e-35,   2.15513887e-06,
+             6.94462278e-06,   1.78061924e-13], dtype=float32)
+
+
