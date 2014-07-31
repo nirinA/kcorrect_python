@@ -44,7 +44,7 @@ float *pyvector_to_Carrayptrs(PyArrayObject *arrayin)
 }
 
 static PyObject *
-kcorrect_load_templates(PyObject *self, PyObject *args)
+_kcorrect_load_templates(PyObject *self, PyObject *args)
 {
     char * vfile;
     char * lfile;
@@ -72,12 +72,12 @@ kcorrect_load_templates(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-PyDoc_STRVAR(kcorrect_load_templates_doc,
+PyDoc_STRVAR(_kcorrect_load_templates_doc,
 "loads the templates."
 );
 
 static PyObject *
-kcorrect_load_filters(PyObject *self, PyObject *args)
+_kcorrect_load_filters(PyObject *self, PyObject *args)
 {
     char * ffile;
     int i;
@@ -105,16 +105,16 @@ kcorrect_load_filters(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-PyDoc_STRVAR(kcorrect_load_filters_doc,
+PyDoc_STRVAR(_kcorrect_load_filters_doc,
 "loads the filters."
 );
 
 static PyObject *
-kcorrect_projection_table(PyObject *self, PyObject *args)
+_kcorrect_projection_table(PyObject *self, PyObject *args)
 {
     PyArrayObject *py_lambda, *py_vmatrix, *py_rmatrix=NULL;
     npy_intp *shape;
-    PyObject *newshape, *av, *al, *_iter = NULL;
+    PyObject *newshape, *_iter = NULL;
     float *_lambda, *_vmatrix;
     float *_rmatrix=NULL;
     float *_zvals=NULL;
@@ -122,24 +122,26 @@ kcorrect_projection_table(PyObject *self, PyObject *args)
     float *_filter_lambda=NULL;
     float *_filter_pass=NULL;
     IDL_LONG *_filter_n=NULL;
-    IDL_LONG _maxn, _nz=1000;
+    IDL_LONG _maxn, _nz;
     char * ffile;
-    int i, ndim;
-    float band_shift;
+    int i;
+    float band_shift, _zmin, _zmax;
     npy_intp *dims=NULL;
     PyArray_Descr * dsc;
-    if (!PyArg_ParseTuple(args, "O!O!fs|i",
-			  &PyArray_Type, &py_vmatrix,
+    if (!PyArg_ParseTuple(args, "O!O!fsffi",
 			  &PyArray_Type, &py_lambda,
-			  &band_shift, &ffile, &_nz))
+			  &PyArray_Type, &py_vmatrix,
+			  &band_shift, &ffile, 
+			  &_zmin, &_zmax, &_nz))
         return NULL;
-    ndim = PyArray_NDIM(py_vmatrix);
+    ndim = PyArray_NDIM(py_vmatrix); /*  ndim global !! not needed here*/
     shape = PyArray_DIMS(py_vmatrix); /*PyArray_SHAPE(py_vmatrix); */
     _nv = shape[0];
     _nl = shape[1];
     newshape = Py_BuildValue("(i)", _nv*_nl);
     _lambda = pyvector_to_Carrayptrs(py_lambda);
     _vmatrix = pyvector_to_Carrayptrs((PyArrayObject *)PyArray_Reshape(py_vmatrix, newshape));
+    /* todo: check if filters are loaded */
     k_load_filters(&_filter_n,&_filter_lambda,&_filter_pass,&_maxn,&_nk,ffile);
     _rmatrix=(float *) malloc(_nz*_nv*_nk*sizeof(float));
     dims=(npy_intp *) malloc(sizeof(npy_intp));    
@@ -147,7 +149,8 @@ kcorrect_projection_table(PyObject *self, PyObject *args)
     dsc = PyArray_DescrFromType(NPY_FLOAT);
     _zvals=(float *) malloc(_nz*sizeof(float));
     for(i=0;i<_nz;i++)
-        _zvals[i]=zmin+(zmax-zmin)*((float)i+0.5)/(float)_nz;
+        _zvals[i]=_zmin+(_zmax-_zmin)*((float)i+0.5)/(float)_nz;
+     
     k_projection_table(_rmatrix,_nk,_nv,_vmatrix,_lambda,_nl,_zvals,_nz,_filter_n,
                        _filter_lambda,_filter_pass,band_shift,_maxn);
 
@@ -158,7 +161,7 @@ kcorrect_projection_table(PyObject *self, PyObject *args)
     for(i=0;i<_nz*_nv*_nk;i++){
         if (PyArray_SETITEM(py_rmatrix, PyArray_ITER_DATA(_iter), PyFloat_FromDouble(_rmatrix[i]))) {
             PyErr_SetString(_kcorrectError, "unable to set _rmatrix");
-            return NULL;
+            goto fail;
          }
          PyArray_ITER_NEXT(_iter);
     }
@@ -173,20 +176,85 @@ fail:
     Py_XDECREF(_iter);
     Py_XDECREF(py_rmatrix);
     return NULL;
-
-
-    /*return PyArray_Reshape(py_vmatrix, newshape);*/
-    /*return PyArray_Return(py_rmatrix);*/
-    /*return Py_BuildValue("ddi",_rmatrix[0], _vmatrix[1], dims[0]);*/
 }
 
-PyDoc_STRVAR(kcorrect_projection_table_doc,
+PyDoc_STRVAR(_kcorrect_projection_table_doc,
 "create the lookup table for given wavelength and flux."
 );
+static PyObject *
+_kcorrect_fit_nonneg(PyObject *self, PyObject *args)
+{
+    /* rmatrix,nk,nv,zvals,nz should be already set with load_filters */
 
+    PyArrayObject *py_maggies, *py_maggies_ivar, *py_coeffs=NULL;
+    npy_intp *shape;
+    PyObject *m_iter, *mi_iter = NULL;
+    float r, *c_maggies, *c_maggies_ivar, *c_coeffs;
+    int i;
+    IDL_LONG niter;
+    npy_intp dims[] = {nv};
+    PyArray_Descr * dsc;
+    dsc = PyArray_DescrFromType(NPY_FLOAT32);
+    if (NULL == rmatrix) { 
+        PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+        return NULL;;
+    } /* end if */
+    if (!PyArg_ParseTuple(args, "fO!O!",
+			  &r,
+			  &PyArray_Type, &py_maggies,
+			  &PyArray_Type, &py_maggies_ivar))
+        return NULL;
+    if ((PyArray_DIMS(py_maggies)[0] != nk) || (PyArray_DIMS(py_maggies_ivar)[0] != nk)) {
+        PyErr_SetString( _kcorrectError,"maggies dimension not compatible with number of filters.");
+	return NULL;
+    }
+    /* free previous coeffs and maggies*/
+    if (NULL != coeffs) FREEVEC(coeffs);
+    if (NULL != chi2) FREEVEC(chi2);
+    if (NULL != redshift) FREEVEC(redshift);
+    if (NULL != maggies) FREEVEC(maggies);
+    if (NULL != maggies_ivar) FREEVEC(maggies_ivar);
+    /* and malloc for new ones */
+    redshift=(float *) malloc(sizeof(float));
+    maggies=(float *) malloc(nk*sizeof(float));
+    maggies_ivar=(float *) malloc(nk*sizeof(float));
+    coeffs=(float *) malloc(nv*sizeof(float));
+    chi2=(float *) malloc(sizeof(float));
+
+    c_maggies = pyvector_to_Carrayptrs(py_maggies);
+    c_maggies_ivar = pyvector_to_Carrayptrs(py_maggies_ivar);
+    for (i=0; i<nk; i++) {
+        maggies[i] = c_maggies[i];
+	maggies_ivar[i] = c_maggies_ivar[i];
+	}
+    redshift[0] = r;
+
+    k_fit_nonneg(coeffs,rmatrix,nk,nv,zvals,nz,
+		      c_maggies,c_maggies_ivar,redshift,
+		      1,tolerance,maxiter,&niter,chi2,0,0);
+  
+
+    py_coeffs = (PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,
+                                                 dsc,
+                                                 1,
+                                                 dims,
+                                                 NULL,
+                                                 NULL,
+                                                 0,
+                                                 NULL);
+    if (NULL == py_coeffs)  return NULL;
+    c_coeffs=pyvector_to_Carrayptrs(py_coeffs);
+    for(i=0;i<nv;i++)   c_coeffs[i] = coeffs[i];
+    return PyArray_Return(py_coeffs);
+    /*return Py_BuildValue("fff", rmatrix[0], maggies_ivar[0], coeffs[0]);*/
+}
+
+PyDoc_STRVAR(_kcorrect_fit_nonneg_doc,
+"Given the rmatrix, does a nonnegative fit of templates to data."
+);
 
 static PyObject *
-kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
+_kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
 {
     IDL_LONG i,j,k,niter,nchunk,ncurrchunk;
     float *mag;
@@ -253,13 +321,13 @@ kcorrect_fit_coeffs_from_file(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-PyDoc_STRVAR(kcorrect_fit_coeffs_from_file_doc,
-"writes the computed coeffs to a file\n\
+PyDoc_STRVAR(_kcorrect_fit_coeffs_from_file_doc,
+"writes the computed coeffs into a file\n\
 with redshift and maggies read from a given file"
 );
 
 static PyObject *
-kcorrect_fit_coeffs(PyObject *self, PyObject *args)
+_kcorrect_fit_coeffs(PyObject *self, PyObject *args)
 {
     IDL_LONG j,niter;
     PyArrayObject *pyin, *pyout;
@@ -328,12 +396,12 @@ kcorrect_fit_coeffs(PyObject *self, PyObject *args)
     return PyArray_Return(pyout);                     
 }
 
-PyDoc_STRVAR(kcorrect_fit_coeffs_doc,
+PyDoc_STRVAR(_kcorrect_fit_coeffs_doc,
 "computes the coeffs from given maggies and redshift"
 );
 
 static PyObject *
-kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
+_kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
 {
     IDL_LONG j;
     PyArrayObject *pyin, *pyout;
@@ -357,7 +425,7 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
                           &PyArray_Type, &pyin,
                           &all_redshift))
         return NULL;
-    if (NULL == pyin)  return NULL;
+    //if (NULL == pyin)  return NULL;
     pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
                                                  dsc,
                                                  1,
@@ -396,12 +464,12 @@ kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     return PyArray_Return(pyout);                     
 }
 
-PyDoc_STRVAR(kcorrect_reconstruct_maggies_doc,
+PyDoc_STRVAR(_kcorrect_reconstruct_maggies_doc,
 "reconstructs maggies from given coeffs and redshift"
 );
 
 static PyObject *
-kcorrect_fit_photoz(PyObject *self, PyObject *args)
+_kcorrect_fit_photoz(PyObject *self, PyObject *args)
 {
     IDL_LONG j,niter;
     PyArrayObject *pyin, *pyout;
@@ -423,7 +491,7 @@ kcorrect_fit_photoz(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O!",
                           &PyArray_Type, &pyin))
         return NULL;
-    if (NULL == pyin)  return NULL;
+    //   if (NULL == pyin)  return NULL;
     pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
                                                  dsc,
                                                  1,
@@ -474,12 +542,12 @@ kcorrect_fit_photoz(PyObject *self, PyObject *args)
     return PyArray_Return(pyout);                     
 }
 
-PyDoc_STRVAR(kcorrect_fit_photoz_doc,
+PyDoc_STRVAR(_kcorrect_fit_photoz_doc,
 "returns guessed coeffs at redshift"
 );
 
 static PyObject *
-kcorrect_k_template(PyObject *self, PyObject *args)
+_kcorrect_k_template(PyObject *self, PyObject *args)
 {
     float *v = NULL;
     char *vfile;
@@ -523,19 +591,32 @@ fail:
     return NULL;
 }
 
-PyDoc_STRVAR(kcorrect_k_template_doc,
+PyDoc_STRVAR(_kcorrect_k_template_doc,
 "return vmatrix or lambda from a template file."
 );
 
+static PyObject *
+_kcorrect_band_shift(PyObject *self)
+{
+  return Py_BuildValue("d", zmin);
+}
+
+PyDoc_STRVAR(_kcorrect_band_shift_doc,
+"return constants."
+);
+
+
 static PyMethodDef kcorrect_methods[] = {
-    {"load_templates", kcorrect_load_templates, METH_VARARGS, kcorrect_load_templates_doc},
-    {"load_filters", kcorrect_load_filters, METH_VARARGS, kcorrect_load_filters_doc},
-    {"fit_coeffs_from_file", kcorrect_fit_coeffs_from_file, METH_VARARGS, kcorrect_fit_coeffs_from_file_doc},
-    {"fit_coeffs", kcorrect_fit_coeffs, METH_VARARGS, kcorrect_fit_coeffs_doc},
-    {"reconstruct_maggies", kcorrect_reconstruct_maggies, METH_VARARGS, kcorrect_reconstruct_maggies_doc},
-    {"fit_photoz", kcorrect_fit_photoz, METH_VARARGS, kcorrect_fit_photoz_doc},
-    {"k_template", kcorrect_k_template, METH_VARARGS, kcorrect_k_template_doc},
-    {"projection_table", kcorrect_projection_table, METH_VARARGS, kcorrect_projection_table_doc},
+    {"load_templates", _kcorrect_load_templates, METH_VARARGS, _kcorrect_load_templates_doc},
+    {"load_filters", _kcorrect_load_filters, METH_VARARGS, _kcorrect_load_filters_doc},
+    {"fit_coeffs_from_file", _kcorrect_fit_coeffs_from_file, METH_VARARGS, _kcorrect_fit_coeffs_from_file_doc},
+    {"fit_coeffs", _kcorrect_fit_coeffs, METH_VARARGS, _kcorrect_fit_coeffs_doc},
+    {"reconstruct_maggies", _kcorrect_reconstruct_maggies, METH_VARARGS, _kcorrect_reconstruct_maggies_doc},
+    {"fit_photoz", _kcorrect_fit_photoz, METH_VARARGS, _kcorrect_fit_photoz_doc},
+    {"k_template", _kcorrect_k_template, METH_VARARGS, _kcorrect_k_template_doc},
+    {"projection_table", _kcorrect_projection_table, METH_VARARGS, _kcorrect_projection_table_doc},
+    {"fit_nonneg", _kcorrect_fit_nonneg, METH_VARARGS, _kcorrect_fit_nonneg_doc},
+    {"band_shift", (PyCFunction)_kcorrect_band_shift, METH_NOARGS, _kcorrect_band_shift_doc},
     {NULL,		NULL}		/* sentinel */
 };
 
