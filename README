@@ -36,7 +36,7 @@ and (may need root privileges) ::
 
     python setup.py install
 
-should build the package and install *kcorret.so*
+should build the package and install *_kcorret.so* and *kcorrect.py*
 into the standard *site-packages* directory.
 
 usage
@@ -74,6 +74,7 @@ The following functions are currently available for this version:
     o :func:`fit_photoz_from_file`
     o :func:`solar_magnitudes`
     o :func:`project_filters`
+    o :func:`fit_nonneg`
 
 Examples of usage
 -----------------

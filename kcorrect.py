@@ -153,4 +153,14 @@ def template(t, templates_dir='data/templates'):
         raise _kcorrect.error('file: %s not found'%tfile)
     return _kcorrect.template(tfile)
 
-    
+def distmod(z, omega0=0.3, omegal0=0.7):
+    '''Calculate distance modulus
+ INPUTS:
+   z                redshifts
+ OPTIONAL INPUTS:
+   omega0           omega_matter to use (default: 0.3)
+   omegal0          omega_lambda to use (default: 0.7)
+ OUTPUTS:
+   dm - distance modulus
+'''
+    return _kcorrect.z2dm(z, omega0, omegal0)

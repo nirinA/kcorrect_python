@@ -596,13 +596,17 @@ PyDoc_STRVAR(_kcorrect_template_doc,
 );
 
 static PyObject *
-_kcorrect_band_shift(PyObject *self)
+_kcorrect_z2dm(PyObject *self, PyObject *args)
 {
-  return Py_BuildValue("d", zmin);
+    float dm, z, omega0, omegal0;
+    if (!PyArg_ParseTuple(args, "fff", &z, &omega0, &omegal0))
+	return NULL;
+    dm = z2dm(z, omega0, omegal0);
+    return Py_BuildValue("f", dm);
 }
 
-PyDoc_STRVAR(_kcorrect_band_shift_doc,
-"return constants."
+PyDoc_STRVAR(_kcorrect_z2dm_doc,
+"Converts redshift z into distance modulus dm,"
 );
 
 
@@ -616,7 +620,7 @@ static PyMethodDef kcorrect_methods[] = {
     {"template", _kcorrect_template, METH_VARARGS, _kcorrect_template_doc},
     {"projection_table", _kcorrect_projection_table, METH_VARARGS, _kcorrect_projection_table_doc},
     {"fit_nonneg", _kcorrect_fit_nonneg, METH_VARARGS, _kcorrect_fit_nonneg_doc},
-    {"band_shift", (PyCFunction)_kcorrect_band_shift, METH_NOARGS, _kcorrect_band_shift_doc},
+    {"z2dm", _kcorrect_z2dm, METH_VARARGS, _kcorrect_z2dm_doc},
     {NULL,		NULL}		/* sentinel */
 };
 
