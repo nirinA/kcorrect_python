@@ -190,7 +190,7 @@ _kcorrect_fit_nonneg(PyObject *self, PyObject *args)
     float r, *c_maggies, *c_maggies_ivar, *c_coeffs;
     int i;
     IDL_LONG niter;
-    npy_intp dims[] = {nv};
+    npy_intp dims[] = {nv+1};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
     if (NULL == vmatrix || NULL == lambda ) { 
@@ -244,10 +244,15 @@ _kcorrect_fit_nonneg(PyObject *self, PyObject *args)
                                                  NULL,
                                                  0,
                                                  NULL);
-    if (NULL == py_coeffs)  return NULL;
+    if (NULL == py_coeffs) goto fail;
     c_coeffs=pyvector_to_Carrayptrs(py_coeffs);
-    for(i=0;i<nv;i++) c_coeffs[i] = coeffs[i];
+    c_coeffs[0] = r;
+    for(i=0;i<nv;i++) c_coeffs[i+1] = coeffs[i];
+    Py_INCREF(py_coeffs);    
     return PyArray_Return(py_coeffs);
+fail:
+    Py_XDECREF(py_coeffs);
+    return NULL;
 }
 
 PyDoc_STRVAR(_kcorrect_fit_nonneg_doc,
@@ -408,7 +413,7 @@ _kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     PyArrayObject *pyin, *pyout;
     float *cin, *cout;
     float all_redshift;
-    npy_intp dims[] = {6};
+    npy_intp dims[] = {nk+1};
     PyArray_Descr * dsc;
     dsc = PyArray_DescrFromType(NPY_FLOAT32);
 
@@ -426,7 +431,6 @@ _kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
                           &PyArray_Type, &pyin,
                           &all_redshift))
         return NULL;
-    //if (NULL == pyin)  return NULL;
     pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,             
                                                  dsc,
                                                  1,
@@ -447,15 +451,10 @@ _kcorrect_reconstruct_maggies(PyObject *self, PyObject *args)
     } else {
         redshift[0]=cin[0];
     }
-
-    coeffs[0] = cin[1];
-    coeffs[1] = cin[2];
-    coeffs[2] = cin[3];
-    coeffs[3] = cin[4];
-    coeffs[4] = cin[5];
+    for (j=0;j<nv;j++) coeffs[j] = cin[j+1];
     k_reconstruct_maggies(zvals,nz,rmatrix,nk,nv,coeffs,redshift,maggies,1);
     cout[0] = redshift[0];
-    for(j=0;j<nv;j++)   cout[1+j] = maggies[j];
+    for(j=0;j<nk;j++)   cout[1+j] = maggies[j];
 
     FREEVEC(redshift);
     FREEVEC(maggies);

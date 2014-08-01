@@ -35,12 +35,10 @@ def fit_coeffs(c):
     if len(c) == 11:
         return _kcorrect.fit_coeffs(c)
     else:
-        raise _kcorrect.error('incompatible number of arguments! should be 11')
+        raise _kcorrect.error('for this deault sdss filters, number of argument should be 11')
 
 def reconstruct_maggies(c, redshift=-1.):
     c = numpy.array(c, dtype='float32')
-    if len(c) != 6:
-        raise _kcorrect.error('incompatible number of arguments! should be 6')
     return _kcorrect.reconstruct_maggies(c, redshift)
 
 def reconstruct_maggies_from_file(c, redshift=-1., outfile='reconstructed_mag.dat'):
@@ -50,7 +48,8 @@ def reconstruct_maggies_from_file(c, redshift=-1., outfile='reconstructed_mag.da
                 l = list(map(float, l.strip('\n').split()))
                 l = numpy.array(l, dtype='float32')
                 r = reconstruct_maggies(l, redshift)
-                out.write('%e %e %e %e %e %e\n'%tuple(r))
+                out.write(' '.join([str(i) for i in r]))
+                out.write('\n')
 
 def fit_photoz(c):
     c = numpy.array(c, dtype='float32')
@@ -74,7 +73,7 @@ def read_basel(solarname, silent=False):
     filename = os.path.join(
         os.getenv('KCORRECT_DIR'), 'data/basel', solarname)
     if not os.path.isfile(filename):
-        raise('%s not found'%filename)
+        raise _kcorrect.error('%s not found'%filename)
     with open(filename,'r') as f:
         returndata = {'flux':[], 'model':[], 'teff':[], 'logg':[], 'mh':[],
             'vturb':[], 'xh':[]}
