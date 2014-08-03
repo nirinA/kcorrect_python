@@ -153,7 +153,7 @@ as follow, after loading the appropriate templates and filter::
 
 if the data are from a file *photoz.dat*::
 
-    >>> fit_photoz('photoz.dat', outfile='photoz.out')
+    >>> fit_photoz_from_file('photoz.dat', outfile='photoz.out')
 
 which produces the result to the output file *photoz.out*
 
