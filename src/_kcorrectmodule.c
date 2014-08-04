@@ -82,6 +82,10 @@ _kcorrect_load_filters(PyObject *self, PyObject *args)
     char * ffile;
     int i;
     float band_shift;
+    if (NULL == vmatrix || NULL == lambda ) { 
+        PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+        return NULL;;
+    } /* end if */
     if (!PyArg_ParseTuple(args, "sf", &ffile, &band_shift))
         return NULL;
 

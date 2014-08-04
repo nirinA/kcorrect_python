@@ -6,8 +6,9 @@ written by Benjamin Weaver.
 import os
 import numpy
 import kcorrect
-## fit_nonneg expects arguments in maggy units
 
+## fit_nonneg expects arguments in maggy units
+## may also need nanomaggy converter...
 def mag2maggies(mag):
     return numpy.power(10., -0.4*mag)
 
