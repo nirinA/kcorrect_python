@@ -1,0 +1,1 @@
+project = 'kcorrect_python'

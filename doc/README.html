@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1   what is kcorrect_python? &mdash; kcorrect_python  documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="kcorrect_python  documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="contents.html">kcorrect_python  documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="auto-toc simple">
+<li><a class="reference internal" href="#what-is-kcorrect-python" id="id3">1&nbsp;&nbsp;&nbsp;what is kcorrect_python?</a></li>
+<li><a class="reference internal" href="#requirements" id="id4">2&nbsp;&nbsp;&nbsp;requirements</a><ul class="auto-toc">
+<li><a class="reference internal" href="#kcorrect" id="id5">2.1&nbsp;&nbsp;&nbsp;kcorrect</a></li>
+<li><a class="reference internal" href="#python-and-dependencies" id="id6">2.2&nbsp;&nbsp;&nbsp;Python and dependencies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installation" id="id7">3&nbsp;&nbsp;&nbsp;installation</a></li>
+<li><a class="reference internal" href="#usage" id="id8">4&nbsp;&nbsp;&nbsp;usage</a><ul class="auto-toc">
+<li><a class="reference internal" href="#test" id="id9">4.1&nbsp;&nbsp;&nbsp;test</a></li>
+<li><a class="reference internal" href="#available-functions" id="id10">4.2&nbsp;&nbsp;&nbsp;Available functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license" id="id11">5&nbsp;&nbsp;&nbsp;LICENSE</a></li>
+</ul>
+</div>
+<div class="section" id="what-is-kcorrect-python">
+<h1>1&nbsp;&nbsp;&nbsp;what is kcorrect_python?<a class="headerlink" href="#what-is-kcorrect-python" title="Permalink to this headline">¶</a></h1>
+<p>This package provides Python interface to kcorrect C library by
+M. Blanton et al. and described here:</p>
+<blockquote>
+<div><a href="#id12"><span class="problematic" id="id13">`http://adsabs.harvard.edu/abs/2007AJ....133..734B&lt;http://adsabs.harvard.edu/abs/2007AJ....133..734B&gt;`_</span></a></div></blockquote>
+</div>
+<div class="section" id="requirements">
+<h1>2&nbsp;&nbsp;&nbsp;requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="kcorrect">
+<h2>2.1&nbsp;&nbsp;&nbsp;kcorrect<a class="headerlink" href="#kcorrect" title="Permalink to this headline">¶</a></h2>
+<p>see:</p>
+<blockquote>
+<div><a class="reference external" href="http://howdy.physics.nyu.edu/index.php/Kcorrect">http://howdy.physics.nyu.edu/index.php/Kcorrect</a></div></blockquote>
+<p>for obtaining kcorrect and how to install it.</p>
+<p>This wrapper uses kcorrect version 4.2.</p>
+</div>
+<div class="section" id="python-and-dependencies">
+<h2>2.2&nbsp;&nbsp;&nbsp;Python and dependencies<a class="headerlink" href="#python-and-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>This version requires Python 2.7+ and NumPy 1.7+</p>
+</div>
+</div>
+<div class="section" id="installation">
+<h1>3&nbsp;&nbsp;&nbsp;installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>the usual:</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py build
+</pre></div>
+</div>
+<p>and (may need root privileges)</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py install
+</pre></div>
+</div>
+<p>should build the package and install <em>_kcorret.so</em> and <em>kcorrect/</em>
+into the standard <em>site-packages</em> directory.</p>
+</div>
+<div class="section" id="usage">
+<h1>4&nbsp;&nbsp;&nbsp;usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>Note: the environmental variables <em>KCORRECT_DIR</em> and
+<em>LD_LIBRARY_PATH</em> should be set and point to the location
+where the kcorrect package is installed, eg:</p>
+<div class="highlight-python"><div class="highlight"><pre>export KCORRECT_DIR=/usr/local/kcorrect
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$KCORRECT_DIR/lib
+</pre></div>
+</div>
+<div class="section" id="test">
+<h2>4.1&nbsp;&nbsp;&nbsp;test<a class="headerlink" href="#test" title="Permalink to this headline">¶</a></h2>
+<p>you can test the package by running:</p>
+<div class="highlight-python"><div class="highlight"><pre>python test.py
+</pre></div>
+</div>
+<p>this will procude two files <em>coeffs.dat</em> and
+<a href="#id1"><span class="problematic" id="id2">*</span></a>reconstructed_maggies.dat&#8221;.</p>
+</div>
+<div class="section" id="available-functions">
+<h2>4.2&nbsp;&nbsp;&nbsp;Available functions<a class="headerlink" href="#available-functions" title="Permalink to this headline">¶</a></h2>
+<p>The following functions are currently available for this version:</p>
+<blockquote>
+<div>o <tt class="xref py py-func docutils literal"><span class="pre">load_templates()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">load_filters()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">fit_coeffs_from_file()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">fit_coeffs()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">reconstruct_maggies()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">reconstruct_maggies_from_files()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">fit_photoz()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">fit_photoz_from_file()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">solar_magnitudes()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">project_filters()</span></tt>
+o <tt class="xref py py-func docutils literal"><span class="pre">fit_nonneg()</span></tt></div></blockquote>
+</div>
+</div>
+<div class="section" id="license">
+<h1>5&nbsp;&nbsp;&nbsp;LICENSE<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h1>
+<p>Public Domain</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="contents.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">1&nbsp;&nbsp;&nbsp;what is kcorrect_python?</a></li>
+<li><a class="reference internal" href="#requirements">2&nbsp;&nbsp;&nbsp;requirements</a><ul>
+<li><a class="reference internal" href="#kcorrect">2.1&nbsp;&nbsp;&nbsp;kcorrect</a></li>
+<li><a class="reference internal" href="#python-and-dependencies">2.2&nbsp;&nbsp;&nbsp;Python and dependencies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installation">3&nbsp;&nbsp;&nbsp;installation</a></li>
+<li><a class="reference internal" href="#usage">4&nbsp;&nbsp;&nbsp;usage</a><ul>
+<li><a class="reference internal" href="#test">4.1&nbsp;&nbsp;&nbsp;test</a></li>
+<li><a class="reference internal" href="#available-functions">4.2&nbsp;&nbsp;&nbsp;Available functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license">5&nbsp;&nbsp;&nbsp;LICENSE</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/README.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="contents.html">kcorrect_python  documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright .
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

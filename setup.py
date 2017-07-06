@@ -25,7 +25,7 @@ moduleztransform = Extension('_ztransform',
                            sources = ['src/_ztransformmodule.c'])
 
 setup (name = 'kcorrect_python',
-       version = '2014.08.03',
+       version = '2017.07.05',
        description = 'Python wrapper for Kcorrect library',
        url = 'https://github.com/nirinA/kcorrect_python',
        author = 'nirina raseliarison',

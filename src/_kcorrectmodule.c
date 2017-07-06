@@ -43,6 +43,14 @@ float *pyvector_to_Carrayptrs(PyArrayObject *arrayin)
     return (float *) arrayin->data; 
 }
 
+IDL_LONG *pyintvector_to_Carrayptrs(PyArrayObject *arrayin);
+
+IDL_LONG *pyintvector_to_Carrayptrs(PyArrayObject *arrayin)
+{
+    /* pointer to arrayin data as IDL_LONG */
+    return (IDL_LONG *) arrayin->data; 
+}
+
 static PyObject *
 _kcorrect_load_templates(PyObject *self, PyObject *args)
 {
@@ -185,6 +193,128 @@ fail:
 PyDoc_STRVAR(_kcorrect_projection_table_doc,
 "create the lookup table for given wavelength and flux."
 );
+
+static PyObject *
+_kcorrect_filter_pass(PyObject *self)
+{
+    float * cv;
+    PyArrayObject * pyout;
+    PyArray_Descr * dsc;
+    npy_intp dims[1];
+    int j;
+    if (NULL == vmatrix || NULL == lambda ) { 
+        PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+        return NULL;;
+    } /* end if */
+    if (NULL == rmatrix) { 
+        PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+        return NULL;;
+    } /* end if */
+    dsc = PyArray_DescrFromType(NPY_DOUBLE);
+    dims[0] = nk*maxn;
+    pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,
+                                                 dsc,
+                                                 1,
+                                                 dims,
+                                                 NULL,
+                                                 NULL,
+                                                 0,
+                                                 NULL);
+    if (NULL == pyout)  return NULL;
+    cv = pyvector_to_Carrayptrs(pyout);
+    for(j=0;j<nk*maxn;j++) cv[j] = filter_pass[j];
+    Py_INCREF(pyout); 
+    return PyArray_Return(pyout);                     
+}
+
+PyDoc_STRVAR(_kcorrect_filter_pass_doc,
+"return the filter pass from loaded filters."
+);
+
+static PyObject *
+_kcorrect_filter_n(PyObject *self)
+{
+    IDL_LONG * cv;
+    PyArrayObject * pyout;
+    PyArray_Descr * dsc;
+    npy_intp dims[1];
+    int j;
+    if (NULL == vmatrix || NULL == lambda ) { 
+        PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+        return NULL;;
+    } /* end if */
+    if (NULL == rmatrix) { 
+        PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+        return NULL;;
+    } /* end if */
+    dsc = PyArray_DescrFromType(NPY_INT);
+    dims[0] = nk;
+    pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,
+                                                 dsc,
+                                                 1,
+                                                 dims,
+                                                 NULL,
+                                                 NULL,
+                                                 0,
+                                                 NULL);
+    if (NULL == pyout)  return NULL;
+    cv = pyintvector_to_Carrayptrs(pyout);
+    for(j=0;j<nk;j++) cv[j] = (IDL_LONG)filter_n[j];
+    Py_INCREF(pyout); 
+    return PyArray_Return(pyout);                     
+}
+
+PyDoc_STRVAR(_kcorrect_filter_n_doc,
+"return the filter n from loaded filters."
+);
+
+static PyObject *
+_kcorrect_filter_lambda(PyObject *self)
+{
+    float * cv;
+    PyArrayObject * pyout;
+    PyArray_Descr * dsc;
+    npy_intp dims[1];
+    int j;
+    if (NULL == vmatrix || NULL == lambda ) { 
+        PyErr_SetString( _kcorrectError,"no templates loaded.\n");
+        return NULL;;
+    } /* end if */
+    if (NULL == rmatrix) { 
+        PyErr_SetString( _kcorrectError,"no filters loaded.\n");
+        return NULL;;
+    } /* end if */
+    dsc = PyArray_DescrFromType(NPY_DOUBLE);
+    dims[0] = nk*maxn;
+    pyout=(PyArrayObject *) PyArray_NewFromDescr(&PyArray_Type,
+                                                 dsc,
+                                                 1,
+                                                 dims,
+                                                 NULL,
+                                                 NULL,
+                                                 0,
+                                                 NULL);
+    if (NULL == pyout)  return NULL;
+    cv = pyvector_to_Carrayptrs(pyout);
+    for(j=0;j<nk*maxn;j++) cv[j] = filter_lambda[j];
+    Py_INCREF(pyout); 
+    return PyArray_Return(pyout);                     
+}
+
+PyDoc_STRVAR(_kcorrect_filter_lambda_doc,
+"return the filter band from loaded filters."
+);
+
+static PyObject *
+_kcorrect_filter_params(PyObject *self)
+{
+  return Py_BuildValue("iiii", nk,nv,nl,maxn);
+}
+
+PyDoc_STRVAR(_kcorrect_filter_params_doc,
+"return filters params -> (nk,nv,nl,maxn)."
+);
+
 static PyObject *
 _kcorrect_fit_nonneg(PyObject *self, PyObject *args)
 {
@@ -617,6 +747,10 @@ static PyMethodDef kcorrect_methods[] = {
     {"template", _kcorrect_template, METH_VARARGS, _kcorrect_template_doc},
     {"projection_table", _kcorrect_projection_table, METH_VARARGS, _kcorrect_projection_table_doc},
     {"fit_nonneg", _kcorrect_fit_nonneg, METH_VARARGS, _kcorrect_fit_nonneg_doc},
+    {"filter_pass", (PyCFunction)_kcorrect_filter_pass, METH_NOARGS, _kcorrect_filter_pass_doc},
+    {"filter_n", (PyCFunction)_kcorrect_filter_n, METH_NOARGS, _kcorrect_filter_n_doc},
+    {"filter_lambda", (PyCFunction)_kcorrect_filter_lambda, METH_NOARGS, _kcorrect_filter_lambda_doc},
+    {"filter_params", (PyCFunction)_kcorrect_filter_params, METH_NOARGS, _kcorrect_filter_params_doc},
     {NULL,		NULL}		/* sentinel */
 };
 

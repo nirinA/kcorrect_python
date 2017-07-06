@@ -3,6 +3,7 @@
 solar_magnitude is adapted from Python code originally
 written by Benjamin Weaver.
 '''
+import _kcorrect
 import os
 import numpy
 import kcorrect
@@ -15,6 +16,29 @@ def mag2maggies(mag):
 def invariance(maggies, mag_err):
     return  numpy.power(0.4*numpy.log(10.)*maggies*mag_err, -2)
 
+def abfix(maggies, maggies_ivar, use_ab02=False):
+    aboff = [-0.036, 0.012, 0.010, 0.028, 0.040]
+    if use_ab02:
+        aboff = [-0.042, 0.036, 0.015, 0.013, -0.002]
+    assert len(maggies) == len(aboff) == len(maggies_ivar)
+    return ([maggies[i]*10.**(-0.4*aboff[i]) for i in range(len(maggies))], \
+            [maggies_ivar[i]*10.**(0.8 * aboff[i]) for i in range(len(maggies))])
+
+##def lambda_eff(f="sdss_filters.dat",
+##               filters_dir="data/templates",
+##               band_shift=0.):
+##    '''Calculates the effective wavelength using the Schneider et al 1983
+##defn (as quoted in Fukugita et al 1996). Returns results in Angstroms.'''
+#### TODO: 
+##    kcorrect.load_filters(f=f, band_shift=band_shift, filters_dir=filters_dir)
+##    nk, nv, nl, maxn = _kcorrect.filter_params()
+##    leff = numpy.zeros(nk)
+##    for k in range(nk):
+##        dloglambda = zeros(_kcorrect.filter_n[k])
+##        n = numpy.sum(dloglambda)
+##        d = numpy.sum(dloglambda)
+##    return numpy.exp(n/d)
+    
 def read_basel(solarname, silent=False):
     """
     Read a spectrum from a Basel spectrum file.
